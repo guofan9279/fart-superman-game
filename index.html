@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>放屁超人</title>
+<style>
+/* ============ 全局重置与基础样式 ============ */
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body {
+  width: 100%; height: 100%;
+  font-family: "Microsoft YaHei", "PingFang SC", "Helvetica Neue", sans-serif;
+  background: linear-gradient(180deg, #a0e9ff 0%, #b5f5d9 50%, #d6f5b5 100%);
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+/* 主容器：居中布局，自适应缩放 */
+#app {
+  position: relative;
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  align-items: center;
+}
+
+/* ============ 顶部标题 ============ */
+.title-bar {
+  margin-top: 2vh;
+  text-align: center;
+  pointer-events: none;
+  z-index: 50;
+}
+.title-bar h1 {
+  font-size: clamp(28px, 6vw, 52px);
+  color: #ff5a36;
+  letter-spacing: 6px;
+  text-shadow: 3px 3px 0 #fff, 5px 5px 0 #2b2b2b;
+  font-weight: 900;
+  transform: rotate(-2deg);
+}
+.title-bar .sub {
+  font-size: clamp(12px, 2.5vw, 16px);
+  color: #555;
+  margin-top: 4px;
+}
+
+/* ============ 通用屏幕容器 ============ */
+.screen {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.screen.active { display: flex; }
+
+/* ============ 输入界面 ============ */
+.card {
+  background: #fff;
+  border-radius: 24px;
+  padding: 32px 28px;
+  box-shadow: 0 10px 0 #ffd1a4, 0 14px 24px rgba(0,0,0,.18);
+  border: 4px solid #2b2b2b;
+  text-align: center;
+  max-width: 90vw;
+  width: 420px;
+}
+.card h2 {
+  color: #ff5a36;
+  margin-bottom: 18px;
+  font-size: clamp(20px, 4vw, 26px);
+}
+.card input {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 18px;
+  border: 3px solid #2b2b2b;
+  border-radius: 14px;
+  outline: none;
+  text-align: center;
+  background: #fff8e8;
+}
+.card input:focus { background: #fff; border-color: #ff5a36; }
+.btn {
+  cursor: pointer;
+  border: 3px solid #2b2b2b;
+  border-radius: 14px;
+  padding: 12px 20px;
+  font-size: 17px;
+  font-weight: bold;
+  background: #ffd54f;
+  color: #2b2b2b;
+  box-shadow: 0 5px 0 #2b2b2b;
+  transition: transform .08s, box-shadow .08s;
+  font-family: inherit;
+}
+.btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #2b2b2b; }
+.btn-primary { background: #ff7a59; color: #fff; margin-top: 16px; width: 100%; }
+.btn-reset {
+  position: absolute;
+  top: 14px; right: 14px;
+  z-index: 60;
+  padding: 8px 14px;
+  font-size: 14px;
+  background: #fff;
+  border-radius: 12px;
+}
+
+/* ============ 选择面板 ============ */
+.choice-wrap { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; margin-top: 24px; }
+.choice-btn {
+  cursor: pointer;
+  border: 4px solid #2b2b2b;
+  border-radius: 20px;
+  padding: 22px 18px;
+  width: 180px;
+  font-size: 18px;
+  font-weight: bold;
+  box-shadow: 0 7px 0 #2b2b2b;
+  transition: transform .1s, box-shadow .1s;
+  font-family: inherit;
+}
+.choice-btn:active { transform: translateY(5px); box-shadow: 0 2px 0 #2b2b2b; }
+.choice-btn .emoji { display:block; font-size: 46px; margin-bottom: 8px; }
+.btn-hate { background: #b0bec5; color: #2b2b2b; }
+.btn-love { background: #ffc0d6; color: #2b2b2b; }
+
+/* ============ 游戏主舞台 ============ */
+#stage {
+  position: relative;
+  width: 100%;
+  flex: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 0 4vw 12vh 4vw;
+  margin-top: 12vh;
+}
+/* 木偶小人 */
+.puppet {
+  position: relative;
+  width: 120px; height: 200px;
+  transition: transform .2s;
+  transform-origin: bottom center;
+}
+.puppet .name-tag {
+  position: absolute;
+  top: -42px; left: 50%;
+  transform: translateX(-50%);
+  background: #fff;
+  border: 3px solid #2b2b2b;
+  border-radius: 10px;
+  padding: 4px 12px;
+  font-size: 16px;
+  font-weight: bold;
+  white-space: nowrap;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  box-shadow: 0 3px 0 #2b2b2b;
+}
+.puppet .head {
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 70px; height: 70px;
+  background: #ffe0b2;
+  border: 3px solid #2b2b2b;
+  border-radius: 12px; /* 方头小圆角 */
+}
+/* 眼镜：两个镜片 + 鼻梁桥 */
+.puppet .glasses { position: absolute; top: 22px; left: 50%; transform: translateX(-50%); width: 56px; height: 20px; pointer-events: none; }
+.puppet .lens {
+  position: absolute; top: 0;
+  width: 22px; height: 20px;
+  border: 2.5px solid #2b2b2b;
+  border-radius: 6px;
+  background: rgba(180, 220, 255, 0.25); /* 淡蓝镜片玻璃感 */
+}
+.puppet .lens.l { left: 0; }
+.puppet .lens.r { right: 0; }
+.puppet .bridge {
+  position: absolute; top: 7px; left: 50%;
+  transform: translateX(-50%);
+  width: 8px; height: 3px;
+  background: #2b2b2b;
+  border-radius: 2px;
+}
+.puppet .eye {
+  position: absolute;
+  top: 26px;
+  width: 8px; height: 12px;
+  background: #2b2b2b;
+  border-radius: 50%;
+  transition: all .25s ease;
+}
+.puppet .eye.l { left: 18px; }
+.puppet .eye.r { right: 18px; }
+/* 眉毛基础样式（默认隐藏，仅特定表情显示） */
+.puppet .brow {
+  position: absolute;
+  top: 16px;
+  width: 14px; height: 4px;
+  background: #2b2b2b;
+  border-radius: 4px;
+  transition: all .25s ease;
+  opacity: 0;
+}
+.puppet .brow.l { left: 15px; }
+.puppet .brow.r { right: 15px; }
+.puppet .mouth {
+  position: absolute;
+  top: 46px; left: 50%;
+  transform: translateX(-50%);
+  width: 24px; height: 10px;
+  border: 3px solid #2b2b2b;
+  border-top: none;
+  border-radius: 0 0 20px 20px;
+  background: transparent;
+  transition: all .25s ease;
+}
+/* === 表情态：痛苦（被臭屁击中） === */
+/* 皱眉（八字眉）+ 张大嘴难受 */
+.puppet.pain .brow {
+  opacity: 1;
+  transform: rotate(35deg);
+}
+.puppet.pain .brow.r { transform: rotate(-35deg); }
+.puppet.pain .brow.l { top: 14px; left: 12px; }
+.puppet.pain .brow.r { top: 14px; right: 12px; }
+.puppet.pain .eye {
+  height: 6px;
+  top: 28px;
+  border-radius: 6px 6px 0 0;
+}
+.puppet.pain .mouth {
+  top: 48px;
+  width: 14px; height: 12px;
+  border: 3px solid #2b2b2b;
+  border-radius: 50%;
+  background: #5a2a2a;
+}
+/* === 表情态：享受（被香氛屁包围） === */
+/* 眯眼（弯弯的笑眼）+ 嘴角上扬 */
+.puppet.enjoy .brow { opacity: 0; }
+.puppet.enjoy .eye {
+  height: 4px;
+  top: 30px;
+  border-radius: 4px 4px 0 0;
+  background: transparent;
+  border-bottom: 3px solid #2b2b2b;
+  border-radius: 0 0 8px 8px;
+}
+.puppet.enjoy .mouth {
+  top: 44px;
+  width: 22px; height: 10px;
+  border: 3px solid #2b2b2b;
+  border-bottom: none;
+  border-radius: 20px 20px 0 0;
+}
+.puppet .body {
+  position: absolute;
+  top: 70px; left: 50%;
+  transform: translateX(-50%);
+  width: 80px; height: 90px;
+  background: #4fc3f7;
+  border: 3px solid #2b2b2b;
+  border-radius: 16px;
+}
+.puppet .arm {
+  position: absolute;
+  top: 78px;
+  width: 16px; height: 60px;
+  background: #ffe0b2;
+  border: 3px solid #2b2b2b;
+  border-radius: 10px;
+}
+.puppet .arm.l { left: 6px; transform-origin: top center; }
+.puppet .arm.r { right: 6px; transform-origin: top center; }
+.puppet .leg {
+  position: absolute;
+  top: 158px;
+  width: 18px; height: 40px;
+  background: #6d4c41;
+  border: 3px solid #2b2b2b;
+  border-radius: 8px;
+}
+.puppet .leg.l { left: 36px; }
+.puppet .leg.r { right: 36px; }
+
+/* 木偶状态动画 */
+/* shake 由外层 wrapper 承载，与内层 dizzy/happy 的 transform 自然合成 */
+.puppet-shake-wrap { display: inline-block; }
+.puppet-shake-wrap.shake { animation: shake .4s ease infinite; }
+.puppet.dizzy { animation: dizzy 1.4s ease; }
+.puppet.happy { animation: spinHappy 1.6s ease; }
+.puppet.idle { animation: breathe 2.6s ease-in-out infinite; }
+
+@keyframes shake {
+  0%,100% { transform: translateX(0) rotate(0); }
+  20% { transform: translateX(-8px) rotate(-3deg); }
+  40% { transform: translateX(8px) rotate(3deg); }
+  60% { transform: translateX(-6px) rotate(-2deg); }
+  80% { transform: translateX(6px) rotate(2deg); }
+}
+@keyframes dizzy {
+  0% { transform: rotate(0); }
+  30% { transform: rotate(-8deg) translateY(-4px); }
+  60% { transform: rotate(6deg) translateY(-2px); }
+  100% { transform: rotate(0); }
+}
+@keyframes spinHappy {
+  0% { transform: rotate(0) scale(1); }
+  50% { transform: rotate(360deg) scale(1.08); }
+  100% { transform: rotate(720deg) scale(1); }
+}
+@keyframes breathe {
+  0%,100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+/* 木偶捂鼻子 */
+.puppet.dizzy .arm.l { transform: rotate(-100deg) translateX(-6px); }
+.puppet.dizzy .arm.r { transform: rotate(100deg) translateX(6px); }
+/* 木偶脸红 */
+.puppet.blush::before, .puppet.blush::after {
+  content: '';
+  position: absolute;
+  top: 40px;
+  width: 10px; height: 6px;
+  background: #ff8a93;
+  border-radius: 50%;
+  opacity: .85;
+}
+.puppet.blush::before { left: 12px; }
+.puppet.blush::after { right: 12px; }
+.puppet.happy.mouth-up .mouth {
+  border: 3px solid #2b2b2b;
+  border-bottom: none;
+  border-radius: 20px 20px 0 0;
+  top: 44px;
+}
+
+/* ============ 放屁超人 ============ */
+.hero {
+  position: relative;
+  width: 140px; height: 220px;
+  transform-origin: bottom center;
+}
+.hero .cape {
+  position: absolute;
+  top: 40px; left: 50%;
+  transform: translateX(-50%) rotate(8deg);
+  width: 90px; height: 110px;
+  background: #e53935;
+  border: 3px solid #2b2b2b;
+  border-radius: 30px 30px 10px 10px;
+  z-index: 0;
+}
+.hero .head {
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 70px; height: 70px;
+  background: #ffe0b2;
+  border: 3px solid #2b2b2b;
+  border-radius: 50%;
+  z-index: 2;
+}
+.hero .mask {
+  position: absolute;
+  top: 22px; left: 50%;
+  transform: translateX(-50%);
+  width: 60px; height: 18px;
+  background: #ffeb3b;
+  border: 3px solid #2b2b2b;
+  border-radius: 8px;
+  z-index: 3;
+}
+.hero .eye {
+  position: absolute;
+  top: 26px;
+  width: 8px; height: 10px;
+  background: #2b2b2b;
+  border-radius: 50%;
+  z-index: 4;
+}
+.hero .eye.l { left: calc(50% - 18px); }
+.hero .eye.r { right: calc(50% - 18px); }
+.hero .smile {
+  position: absolute;
+  top: 46px; left: 50%;
+  transform: translateX(-50%);
+  width: 22px; height: 10px;
+  border: 3px solid #2b2b2b;
+  border-top: none;
+  border-radius: 0 0 20px 20px;
+  z-index: 4;
+}
+.hero .body {
+  position: absolute;
+  top: 64px; left: 50%;
+  transform: translateX(-50%);
+  width: 90px; height: 100px;
+  background: #ffeb3b;
+  border: 3px solid #2b2b2b;
+  border-radius: 18px;
+  z-index: 1;
+}
+.hero .emblem {
+  position: absolute;
+  top: 86px; left: 50%;
+  transform: translateX(-50%);
+  width: 26px; height: 26px;
+  background: #ff5a36;
+  border: 3px solid #2b2b2b;
+  border-radius: 50%;
+  z-index: 2;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; font-weight: 900; color: #fff;
+}
+.hero .arm {
+  position: absolute;
+  top: 76px;
+  width: 16px; height: 60px;
+  background: #ffe0b2;
+  border: 3px solid #2b2b2b;
+  border-radius: 10px;
+  z-index: 0;
+}
+.hero .arm.l { left: 12px; transform-origin: top center; }
+.hero .arm.r { right: 12px; transform-origin: top center; }
+.hero .leg {
+  position: absolute;
+  top: 160px;
+  width: 20px; height: 50px;
+  background: #1565c0;
+  border: 3px solid #2b2b2b;
+  border-radius: 8px;
+  z-index: 0;
+}
+.hero .leg.l { left: 40px; }
+.hero .leg.r { right: 40px; }
+
+/* 超人放屁动作 */
+/* 放屁超人放屁动作：朝左（木偶方向）撅屁股 + 双手撑膝 + 灵动起伏 */
+.hero.farting {
+  animation: fartPose .7s cubic-bezier(.34, 1.56, .64, 1);
+}
+@keyframes fartPose {
+  0%, 100% { transform: translate(0, 0) rotate(0) rotateY(0); }
+  /* 1. 起手准备：双膝微屈、上身前倾朝向木偶 */
+  15% { transform: translate(-4px, 2px) rotate(-4deg) rotateY(-12deg); }
+  /* 2. 用力撅起：屁股后顶、上身压低、转身朝左 */
+  35% { transform: translate(-8px, 8px) rotate(-10deg) rotateY(-25deg); }
+  /* 3. 放屁瞬间抖动一下：往后顶一下再回 */
+  50% { transform: translate(-12px, 6px) rotate(-8deg) rotateY(-22deg); }
+  60% { transform: translate(-6px, 9px) rotate(-12deg) rotateY(-28deg); }
+  /* 4. 余韵：轻微摇晃 */
+  75% { transform: translate(-3px, 4px) rotate(-5deg) rotateY(-15deg); }
+  90% { transform: translate(-1px, 1px) rotate(-1deg) rotateY(-4deg); }
+}
+/* 放屁时双臂前抬撑膝（灵动感） */
+.hero.farting .arm {
+  animation: armFartPose .7s ease;
+}
+@keyframes armFartPose {
+  0%, 100% { transform: rotate(0); }
+  35%, 60% { transform: rotate(-35deg) translateY(6px); }
+}
+/* 放屁时腿微弯 */
+.hero.farting .leg {
+  animation: legFartPose .7s ease;
+}
+@keyframes legFartPose {
+  0%, 100% { transform: rotate(0); }
+  35%, 60% { transform: rotate(8deg) scaleY(.92); }
+}
+
+/* ============ 特效层 ============ */
+#fxLayer {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 30;
+}
+.fx-particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+/* 臭屁粒子：灰黄烟雾 */
+.fx-stink {
+  background: radial-gradient(circle, #d8c878 0%, #9e8a3a 60%, rgba(120,100,30,0) 100%);
+  box-shadow: 0 0 10px rgba(120,100,30,.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* 臭屁粒子内 💩 emoji 装饰：略大于香氛屁 emoji，色调偏暗 */
+.fx-emoji-stink {
+  font-size: 70%;
+  filter: drop-shadow(0 0 2px rgba(60,40,0,.6));
+}
+/* 香氛屁粒子：彩色透明气泡 */
+.fx-fragrance {
+  background: radial-gradient(circle, rgba(255,255,255,.9) 0%, currentColor 60%, transparent 100%);
+  box-shadow: 0 0 14px currentColor;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* 香氛屁粒子内 emoji 装饰 */
+.fx-emoji {
+  font-size: 60%;
+  line-height: 1;
+  filter: drop-shadow(0 0 2px rgba(255,255,255,.8));
+  pointer-events: none;
+  user-select: none;
+}
+/* 花瓣/爱心粒子 */
+.fx-petal { width: 14px; height: 14px; }
+.fx-heart {
+  width: 14px; height: 14px;
+  background: transparent;
+}
+.fx-heart::before, .fx-heart::after {
+  content:'';
+  position:absolute;
+  width:8px; height:12px;
+  background: currentColor;
+  border-radius: 8px 8px 0 0;
+}
+.fx-heart::before { transform: rotate(-45deg); left: 0; }
+.fx-heart::after  { transform: rotate(45deg); left: 6px; }
+
+/* 点击反馈涟漪 */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: rippleAnim .5s ease-out forwards;
+  z-index: 100;
+}
+@keyframes rippleAnim {
+  0% { transform: scale(0); opacity: .8; }
+  100% { transform: scale(3); opacity: 0; }
+}
+
+/* ============ 技能选择栏 ============ */
+.skill-bar {
+  position: absolute;
+  bottom: 14px; left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+  padding: 10px 12px;
+  background: rgba(255,255,255,.85);
+  border: 3px solid #2b2b2b;
+  border-radius: 18px;
+  box-shadow: 0 5px 0 #2b2b2b;
+  max-width: 94vw;
+  z-index: 40;
+}
+.skill-btn {
+  cursor: pointer;
+  border: 3px solid #2b2b2b;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: bold;
+  background: #fff;
+  color: #2b2b2b;
+  box-shadow: 0 4px 0 #2b2b2b;
+  transition: transform .08s, box-shadow .08s;
+  font-family: inherit;
+  position: relative;
+  overflow: hidden;
+}
+.skill-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #2b2b2b; }
+.skill-stink { background: #d7c870; }
+.skill-fragrance { background: #ffc8e2; }
+
+/* 提示气泡 */
+.toast {
+  position: absolute;
+  top: 12vh; left: 50%;
+  transform: translateX(-50%);
+  background: rgba(43,43,43,.9);
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  opacity: 0;
+  transition: opacity .3s;
+  z-index: 100;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; }
+
+/* 移动端适配 */
+@media (max-width: 600px) {
+  #stage { padding: 0 4vw 10vh 4vw; }
+  .puppet { width: 90px; height: 150px; }
+  .puppet .head { width: 54px; height: 54px; }
+  .puppet .glasses { top: 17px; width: 44px; height: 16px; }
+  .puppet .lens { width: 17px; height: 16px; }
+  .puppet .bridge { top: 6px; width: 6px; }
+  .puppet .eye { top: 20px; }
+  .puppet .mouth { top: 36px; }
+  .puppet .body { top: 54px; width: 62px; height: 70px; }
+  .puppet .arm { top: 60px; height: 46px; }
+  .puppet .leg { top: 122px; height: 30px; }
+  .hero { width: 110px; height: 180px; }
+  .skill-btn { padding: 8px 10px; font-size: 12px; }
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- 顶部标题 -->
+  <div class="title-bar">
+    <h1>放屁超人</h1>
+    <div class="sub">卡通趣味整蛊小游戏</div>
+  </div>
+
+  <!-- 屏幕1：输入名字 -->
+  <div id="screen-input" class="screen active">
+    <div class="card">
+      <h2>请输入一个名字</h2>
+      <input id="nameInput" type="text" maxlength="12" placeholder="输入人名…" autocomplete="off">
+      <button class="btn btn-primary" id="confirmNameBtn">确 定</button>
+    </div>
+  </div>
+
+  <!-- 屏幕2：选择讨厌/喜欢 -->
+  <div id="screen-choice" class="screen">
+    <div class="card">
+      <h2 id="choiceTitle">这个人…</h2>
+      <div class="choice-wrap">
+        <button class="choice-btn btn-hate" id="btnHate">
+          <span class="emoji">😠</span>
+          这个人是我<br>讨厌的人
+        </button>
+        <button class="choice-btn btn-love" id="btnLove">
+          <span class="emoji">😊</span>
+          这个人是我<br>喜欢的人
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 屏幕3：游戏舞台 -->
+  <div id="screen-game" class="screen">
+    <button class="btn btn-reset" id="resetBtn">重新输入名字</button>
+
+    <div id="stage">
+      <!-- 左侧木偶：外层 wrapper 承载 shake，内层 puppet 承载 dizzy/happy/idle -->
+      <div class="puppet-shake-wrap" id="puppetShake">
+        <div class="puppet idle" id="puppet">
+          <div class="name-tag" id="nameTag">玩家</div>
+          <div class="head">
+            <div class="brow l"></div>
+            <div class="brow r"></div>
+            <div class="glasses">
+              <div class="lens l"></div>
+              <div class="lens r"></div>
+              <div class="bridge"></div>
+            </div>
+            <div class="eye l"></div>
+            <div class="eye r"></div>
+            <div class="mouth"></div>
+          </div>
+          <div class="body"></div>
+          <div class="arm l"></div>
+          <div class="arm r"></div>
+          <div class="leg l"></div>
+          <div class="leg r"></div>
+        </div>
+      </div>
+
+      <!-- 右侧放屁超人 -->
+      <div class="hero" id="hero">
+        <div class="cape"></div>
+        <div class="head">
+          <div class="mask"></div>
+          <div class="eye l"></div>
+          <div class="eye r"></div>
+          <div class="smile"></div>
+        </div>
+        <div class="body"></div>
+        <div class="emblem">P</div>
+        <div class="arm l"></div>
+        <div class="arm r"></div>
+        <div class="leg l"></div>
+        <div class="leg r"></div>
+      </div>
+
+      <!-- 特效层 -->
+      <div id="fxLayer"></div>
+    </div>
+
+    <!-- 技能栏 -->
+    <div class="skill-bar" id="skillBar"></div>
+
+    <!-- 提示 -->
+    <div class="toast" id="toast"></div>
+  </div>
+
+</div>
+
+<script>
+/* ===========================================================
+ * 放屁超人 - 休闲整蛊小游戏
+ * 单文件原生实现：HTML + CSS + JS
+ * 特效：DOM粒子 + CSS动画
+ * 音效：预留接口 playSfx(name)，可后续接入音频文件
+ * =========================================================== */
+
+(function () {
+  'use strict';
+
+  /* ---------- 全局状态 ---------- */
+  const State = {
+    name: '',
+    mode: '',          // 'hate' | 'love'
+    isAnimating: false // 防止快速点击导致动画错乱
+  };
+
+  /* ---------- 技能配置 ---------- */
+  // 分支A：讨厌的人 —— 臭屁攻击型
+  const STINK_SKILLS = [
+    { id: 'normal',  name: '普通臭屁', color: '#9e8a3a', type: 'stink', count: 6,  size: 28, spread: 30, dur: 1400, dizzy: 'shake', bgEmoji: '💩' },
+    { id: 'chain',   name: '连环臭屁', color: '#8a7a30', type: 'stink', count: 12, size: 24, spread: 50, dur: 1800, dizzy: 'shake', bgEmoji: '💩' },
+    { id: 'poison',  name: '毒气巨屁', color: '#6b5e2a', type: 'stink', count: 4,  size: 56, spread: 20, dur: 2200, dizzy: 'shake', bgEmoji: '💩' },
+    { id: 'bounce',  name: '弹跳熏人屁', color: '#a89030', type: 'stink', count: 8,  size: 30, spread: 70, dur: 2000, dizzy: 'shake', bounce: true, bgEmoji: '💩' }
+  ];
+  // 分支B：喜欢的人 —— 香氛屁治愈型
+  const FRAGRANCE_SKILLS = [
+    { id: 'sakura',  name: '樱花香氛屁', color: '#ffb7d5', type: 'fragrance', count: 10, size: 26, dur: 1800, petals: 'petal',  petalColor: '#ffd0e6', bgEmoji: '🌸' },
+    { id: 'peach',   name: '蜜桃香氛屁', color: '#ffc48c', type: 'fragrance', count: 10, size: 28, dur: 1800, petals: 'petal',  petalColor: '#ffd9a8', bgEmoji: '🍑' },
+    { id: 'rose',    name: '玫瑰香氛屁', color: '#ff6f91', type: 'fragrance', count: 12, size: 26, dur: 2000, petals: 'heart',  petalColor: '#ff5a8a', bgEmoji: '🌹' },
+    { id: 'star',    name: '星光甜香屁', color: '#ffe082', type: 'fragrance', count: 14, size: 24, dur: 2000, petals: 'heart',  petalColor: '#ffd54f', bgEmoji: '💫' }
+  ];
+
+  /* ---------- DOM 引用 ---------- */
+  const $ = id => document.getElementById(id);
+  const screens = {
+    input:  $('screen-input'),
+    choice: $('screen-choice'),
+    game:   $('screen-game')
+  };
+  const nameInput = $('nameInput');
+  const confirmNameBtn = $('confirmNameBtn');
+  const choiceTitle = $('choiceTitle');
+  const btnHate = $('btnHate');
+  const btnLove = $('btnLove');
+  const resetBtn = $('resetBtn');
+  const nameTag = $('nameTag');
+  const puppet = $('puppet');
+  const puppetShake = $('puppetShake');
+  const hero = $('hero');
+  const fxLayer = $('fxLayer');
+  const skillBar = $('skillBar');
+  const toast = $('toast');
+
+  /* ---------- 屏幕切换 ---------- */
+  function showScreen(key) {
+    Object.values(screens).forEach(s => s.classList.remove('active'));
+    screens[key].classList.add('active');
+  }
+
+  /* ---------- 提示 toast ---------- */
+  let toastTimer = null;
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 1400);
+  }
+
+  /* ---------- 音效接口（预留）----------
+   * 在此处接入真实音频文件即可，例如：
+   *   const audioMap = {
+   *     stink:  new Audio('stink.mp3'),
+   *     love:   new Audio('love.mp3'),
+   *     click:  new Audio('click.mp3')
+   *   };
+   *   audioMap[name]?.play();
+   */
+  function playSfx(name) {
+    // 预留音效接口，暂不实现真实播放
+    // console.log('sfx:', name);
+  }
+
+  /* ---------- 名字输入 ---------- */
+  function submitName() {
+    const name = (nameInput.value || '').trim();
+    if (!name) { showToast('请先输入一个名字～'); nameInput.focus(); return; }
+    State.name = name.slice(0, 12);
+    choiceTitle.textContent = State.name + ' 这个人…';
+    showScreen('choice');
+  }
+  confirmNameBtn.addEventListener('click', submitName);
+  nameInput.addEventListener('keydown', e => { if (e.key === 'Enter') submitName(); });
+
+  /* ---------- 分支选择 ---------- */
+  btnHate.addEventListener('click', () => {
+    State.mode = 'hate';
+    startGame();
+  });
+  btnLove.addEventListener('click', () => {
+    State.mode = 'love';
+    startGame();
+  });
+
+  /* ---------- 重新输入名字 ---------- */
+  resetBtn.addEventListener('click', () => {
+    State.mode = '';
+    State.isAnimating = false;
+    puppet.className = 'puppet idle';
+    puppetShake.classList.remove('shake');
+    fxLayer.innerHTML = '';
+    nameInput.value = '';
+    showScreen('input');
+    setTimeout(() => nameInput.focus(), 100);
+  });
+
+  /* ---------- 启动游戏 ---------- */
+  function startGame() {
+    nameTag.textContent = State.name;
+    // 清理状态
+    puppet.className = 'puppet idle';
+    puppetShake.classList.remove('shake');
+    fxLayer.innerHTML = '';
+    // 构建技能栏
+    const skills = State.mode === 'hate' ? STINK_SKILLS : FRAGRANCE_SKILLS;
+    skillBar.innerHTML = '';
+    skills.forEach(skill => {
+      const b = document.createElement('button');
+      b.className = 'skill-btn ' + (skill.type === 'stink' ? 'skill-stink' : 'skill-fragrance');
+      b.textContent = (skill.bgEmoji ? skill.bgEmoji + ' ' : '') + skill.name;
+      b.addEventListener('click', e => {
+        addRipple(e, b);
+        triggerSkill(skill);
+      });
+      skillBar.appendChild(b);
+    });
+    showScreen('game');
+    showToast(State.mode === 'hate' ? '臭屁技能已解锁，开整！' : '香氛屁技能已解锁，来点甜蜜吧～');
+  }
+
+  /* ---------- 点击涟漪反馈 ---------- */
+  function addRipple(e, el) {
+    const rect = el.getBoundingClientRect();
+    const r = document.createElement('span');
+    r.className = 'ripple';
+    const size = Math.max(rect.width, rect.height);
+    r.style.width = r.style.height = size + 'px';
+    r.style.left = (e.clientX - rect.left - size / 2) + 'px';
+    r.style.top  = (e.clientY - rect.top  - size / 2) + 'px';
+    r.style.background = 'rgba(255,255,255,.6)';
+    el.appendChild(r);
+    setTimeout(() => r.remove(), 500);
+  }
+
+  /* ---------- 触发技能 ---------- */
+  function triggerSkill(skill) {
+    if (State.isAnimating) return;
+    State.isAnimating = true;
+    playSfx(skill.type === 'stink' ? 'stink' : 'love');
+
+    // 超人放屁动作
+    hero.classList.remove('farting');
+    void hero.offsetWidth; // 触发重绘以重启动画
+    hero.classList.add('farting');
+    setTimeout(() => hero.classList.remove('farting'), 700);
+
+    // 释放粒子
+    spawnParticles(skill);
+
+    // 粒子飞抵后触发木偶反应
+    setTimeout(() => puppetReact(skill), skill.dur - 600);
+
+    // 解锁下一次点击
+    setTimeout(() => { State.isAnimating = false; }, skill.dur);
+  }
+
+  /* ---------- 粒子生成 ---------- */
+  function spawnParticles(skill) {
+    const stageRect = $('stage').getBoundingClientRect();
+    const heroRect  = hero.getBoundingClientRect();
+    const puppetRect= puppet.getBoundingClientRect();
+
+    // 起点位于超人左下角（屁股位置）
+    const startX = heroRect.left + heroRect.width * 0.2 - stageRect.left;
+    const startY = heroRect.top  + heroRect.height * 0.7  - stageRect.top;
+    // 终点位于木偶中心
+    const endX   = puppetRect.left + puppetRect.width / 2 - stageRect.left;
+    const endY   = puppetRect.top  + puppetRect.height * 0.4 - stageRect.top;
+
+    for (let i = 0; i < skill.count; i++) {
+      setTimeout(() => {
+        createParticle(skill, startX, startY, endX, endY);
+      }, i * (skill.type === 'stink' ? 90 : 70));
+    }
+
+    // 香氛屁额外飘落花瓣/爱心
+    if (skill.type === 'fragrance' && skill.petals) {
+      for (let i = 0; i < 14; i++) {
+        setTimeout(() => createPetal(skill, stageRect), i * 80);
+      }
+    }
+    // 臭屁额外从顶部掉落 💩 背景特效
+    if (skill.type === 'stink' && skill.bgEmoji) {
+      const dropCount = skill.id === 'chain' ? 14 : (skill.id === 'poison' ? 10 : 8);
+      for (let i = 0; i < dropCount; i++) {
+        setTimeout(() => createPoopDrop(skill, stageRect), i * 100);
+      }
+    }
+  }
+
+  function createParticle(skill, sx, sy, ex, ey) {
+    const p = document.createElement('div');
+    p.className = 'fx-particle ' + (skill.type === 'stink' ? 'fx-stink' : 'fx-fragrance');
+    const size = skill.size + Math.random() * 12 - 6;
+    p.style.width = p.style.height = size + 'px';
+    p.style.left = sx + 'px';
+    p.style.top  = sy + 'px';
+
+    if (skill.type === 'fragrance') {
+      p.style.color = skill.color;
+      // 香氛屁粒子内部叠加对应 emoji 背景装饰
+      if (skill.bgEmoji) {
+        const emoji = document.createElement('span');
+        emoji.className = 'fx-emoji';
+        emoji.textContent = skill.bgEmoji;
+        p.appendChild(emoji);
+      }
+    } else if (skill.type === 'stink') {
+      // 臭屁粒子内部叠加 💩 emoji 装饰
+      if (skill.bgEmoji) {
+        const emoji = document.createElement('span');
+        emoji.className = 'fx-emoji fx-emoji-stink';
+        emoji.textContent = skill.bgEmoji;
+        p.appendChild(emoji);
+      }
+    }
+
+    // 终点 + 抖动偏移
+    const jx = (Math.random() - 0.5) * (skill.spread || 30);
+    const jy = (Math.random() - 0.5) * 30;
+    const tx = ex - sx + jx;
+    const ty = ey - sy + jy;
+    const dur = skill.dur + Math.random() * 300;
+
+    fxLayer.appendChild(p);
+
+    // 使用 Web Animations API 控制位移与透明度
+    const keyframes = skill.bounce
+      ? [
+          { transform: 'translate(0,0) scale(.4)', opacity: 0 },
+          { transform: `translate(${tx*0.5}px, ${ty*0.3 - 30}px) scale(1)`, opacity: .95, offset: .4 },
+          { transform: `translate(${tx*0.7}px, ${ty*0.6 + 20}px) scale(.9)`, opacity: .9, offset: .65 },
+          { transform: `translate(${tx}px, ${ty}px) scale(1.1)`, opacity: .85, offset: .9 },
+          { transform: `translate(${tx}px, ${ty + 20}px) scale(.2)`, opacity: 0 }
+        ]
+      : [
+          { transform: 'translate(0,0) scale(.4)', opacity: 0 },
+          { transform: `translate(${tx*0.6}px, ${ty*0.5 - 10}px) scale(1)`, opacity: .95, offset: .5 },
+          { transform: `translate(${tx}px, ${ty}px) scale(1.15)`, opacity: .8, offset: .9 },
+          { transform: `translate(${tx}px, ${ty + 15}px) scale(.3)`, opacity: 0 }
+        ];
+    const anim = p.animate(keyframes, { duration: dur, easing: 'ease-out', fill: 'forwards' });
+    anim.onfinish = () => p.remove();
+  }
+
+  function createPetal(skill, stageRect) {
+    const p = document.createElement('div');
+    p.className = 'fx-particle ' + (skill.petals === 'heart' ? 'fx-heart' : 'fx-petal');
+    p.style.color = skill.petalColor;
+    if (skill.petals === 'petal') {
+      p.style.background = skill.petalColor;
+      p.style.borderRadius = '50% 0 50% 50%';
+      p.style.transform = 'rotate(' + (Math.random()*360) + 'deg)';
+    }
+    const size = 12 + Math.random() * 8;
+    p.style.width = p.style.height = size + 'px';
+
+    const startX = Math.random() * stageRect.width;
+    p.style.left = startX + 'px';
+    p.style.top = '-20px';
+
+    fxLayer.appendChild(p);
+    const driftX = (Math.random() - 0.5) * 80;
+    const anim = p.animate([
+      { transform: 'translate(0,0) rotate(0deg)', opacity: 0 },
+      { transform: `translate(${driftX*0.3}px, ${stageRect.height*0.4}px) rotate(180deg)`, opacity: 1, offset: .5 },
+      { transform: `translate(${driftX}px, ${stageRect.height + 20}px) rotate(360deg)`, opacity: 0 }
+    ], { duration: 2600 + Math.random() * 800, easing: 'ease-in', fill: 'forwards' });
+    anim.onfinish = () => p.remove();
+  }
+
+  /* 臭屁掉落 💩 背景特效：从舞台顶部摆动飘落 */
+  function createPoopDrop(skill, stageRect) {
+    const p = document.createElement('div');
+    p.className = 'fx-particle fx-poop-drop';
+    const size = 18 + Math.random() * 14;
+    p.style.width = p.style.height = size + 'px';
+    p.style.fontSize = size + 'px';
+    p.style.lineHeight = '1';
+    p.style.display = 'flex';
+    p.style.alignItems = 'center';
+    p.style.justifyContent = 'center';
+    p.textContent = skill.bgEmoji;
+    const startX = Math.random() * stageRect.width;
+    p.style.left = startX + 'px';
+    p.style.top = '-24px';
+    fxLayer.appendChild(p);
+    // 摆动飘落 + 旋转 + 缩放
+    const driftX = (Math.random() - 0.5) * 120;
+    const spinDeg = (Math.random() > 0.5 ? 1 : -1) * (360 + Math.random() * 360);
+    const anim = p.animate([
+      { transform: 'translate(0,0) rotate(0deg) scale(.6)', opacity: 0 },
+      { transform: `translate(${driftX*0.4}px, ${stageRect.height*0.3}px) rotate(${spinDeg*0.3}deg) scale(1)`, opacity: 1, offset: .3 },
+      { transform: `translate(${driftX*0.8}px, ${stageRect.height*0.7}px) rotate(${spinDeg*0.7}deg) scale(1)`, opacity: 1, offset: .7 },
+      { transform: `translate(${driftX}px, ${stageRect.height + 30}px) rotate(${spinDeg}deg) scale(.8)`, opacity: 0 }
+    ], { duration: 2400 + Math.random() * 900, easing: 'cubic-bezier(.4,.1,.7,1)', fill: 'forwards' });
+    anim.onfinish = () => p.remove();
+  }
+
+  /* ---------- 木偶反应 ---------- */
+  // shake 作用于外层 wrapper，dizzy/happy 作用于内层 puppet，二者 transform 自然合成
+  function puppetReact(skill) {
+    // 清除上一轮状态类（保留 idle）
+    puppet.classList.remove('idle', 'dizzy', 'happy', 'blush', 'mouth-up', 'pain', 'enjoy');
+    puppetShake.classList.remove('shake');
+    void puppet.offsetWidth;
+    void puppetShake.offsetWidth;
+
+    if (skill.type === 'stink') {
+      // 臭屁：痛苦表情 + 难受、眩晕、捂鼻子 + 震动
+      puppet.classList.add('dizzy', 'pain');
+      if (skill.dizzy === 'shake') puppetShake.classList.add('shake');
+      // 抬手捂鼻子（CSS已通过 .dizzy 控制）
+      setTimeout(() => {
+        puppet.classList.remove('dizzy', 'pain');
+        puppetShake.classList.remove('shake');
+        puppet.classList.add('idle');
+      }, 1500);
+    } else {
+      // 香氛屁：享受表情 + 开心、脸红、转圈
+      puppet.classList.add('happy', 'enjoy', 'blush');
+      setTimeout(() => {
+        puppet.classList.remove('happy', 'enjoy', 'blush');
+        puppet.classList.add('idle');
+      }, 1700);
+    }
+  }
+
+  /* ---------- 初始化 ---------- */
+  // 自动聚焦输入框
+  setTimeout(() => nameInput.focus(), 200);
+})();
+</script>
+</body>
+</html>
