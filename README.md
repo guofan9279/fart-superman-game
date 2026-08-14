@@ -10,7 +10,7 @@
 
  🚀 游玩方式
 ### 在线访问
-> 部署完成
+> 部署完成 https://fart-superman-game.vercel.app
 
 ### 本地游玩
 1. 下载仓库内 `index.html`
